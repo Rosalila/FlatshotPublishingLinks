@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/3.0.3/normalize.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/milligram/1.1.0/milligram.min.css">
+
+  <script src="data.js"></script>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+  <script src="https://turupawn.github.io/Jsonification/arbor.js"></script>  
+  <script src="arbor_setup.js"></script>
+
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+  <meta charset="utf-8">
+  <style>
+    html, body, #main {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+  </style>
+<body>
+<!--
+<form action="https://turupawn.github.io/Jsonification/index.html" method="GET">
+  <textarea name="data" id="textarea" cols="45" rows="5">[{"a":10},{"a":20},{"a":30}]</textarea>
+  <input type="submit" /> 
+</form>
+-->
+
+<canvas ng-if="isCanvas == true" width="1" height="1" id="canvas" style="border:1px solid #d3d3d3;">
+Your browser does not support the HTML5 canvas tag.</canvas>
+
+<div id="main" ng-app="myApp" ng-controller="customersCtrl">
+
+<table ng-if="isSequentialTable == true">
+  <tr>
+    <th ng-repeat="key in keys">{{ key }}</th>
+  </tr>
+  <tr ng-repeat="(key_row,data_row) in data">
+    <td ng-repeat="data_column in data_row">{{ data_column }}</td>
+  </tr>
+</table>
+
+<table ng-if="isNonSequentialTable == true">
+  <tr ng-repeat="(key_row,data_row) in data">
+    <td ng-repeat="(key_column,data_column) in data_row">{{ key_column }}: {{ data_column }}</td>
+  </tr>
+</table>
+
+<div ng-if="isChart == true" id="chart_div" style="width: 900px; height: 300px;"></div>
+
+<div ng-if="isMindMap == true">
+  <canvas id="viewport" width="1200" height="1200"></canvas>
+</div>
+
+<div ng-if="isMap == true" id="map" style="width:100%; height:100%;"></div>
+
+</div>
+
+<script>
+
+function getQueryParams(qs) {
+    qs = qs.split('+').join(' ');
+
+    var params = {},
+        tokens,
+        re = /[?&]?([^=]+)=([^&]*)/g;
+
+    while (tokens = re.exec(qs)) {
+        params[decodeURIComponent(tokens[1])] = decodeURIComponent(tokens[2]);
+    }
+
+    return params;
+}
+
+//console.log(getQueryParams(document.location.search).data)
+
+data_param = getQueryParams(document.location.search).data;
+
+//data = []//!!!
+
+if(data_param)
+{
+  //data = JSON.parse('{"data":'+data_param+'}').data//!!!
+  $("#textarea").val(data_param);
+}
+
+var app = angular.module('myApp', []);
+
+bar_data = [];
+canvas_data = [];
+map_data = [];
+mindmap_data = [];
+
+app.controller('customersCtrl', function($scope, $http) {
+
+  $scope.isSequentialTable=true;
+  $scope.isNonSequential=false;
+  $scope.isChart=true;
+  $scope.isCanvas=true;
+  $scope.isMap=true;
+  $scope.isMindMap=true;
+
+  $scope.data = data;
+  $scope.keys=[];
+
+  //Table keys
+  $.each(data[0], function(key, value){
+    $scope.keys.push(key);
+  });
+
+  //isSequential
+  $.each(data, function(key, value){
+    current_keys=[];
+    $.each(value, function(key, value){
+      current_keys.push(key);
+    });
+    if(JSON.stringify($scope.keys) != JSON.stringify(current_keys))
+    {
+      $scope.isSequentialTable=false;
+      $scope.isNonSequentialTable=true;
+    }
+  });
+
+  if(data.length==0)
+  {
+    $scope.isSequentialTable=false;
+    $scope.isNonSequentialTable=true;
+  }
+
+  //isChart
+  bar_data = [ ['TODO1', 'TODO2', { role: 'style' }] ];
+  $.each(data, function(key, value){
+    if(value.name && value.value)
+      bar_data.push([value.name, value.value, '#b87333'])
+  })
+
+  if(bar_data.length<=1)
+    $scope.isChart=false;
+
+  //isMap
+  $.each(data, function(key, value){
+
+    if(value.lat && value.lng)
+      map_data.push([value.lat, value.lng])
+  })
+
+  if(map_data.length<=0)
+    $scope.isMap=false;
+
+  //isMindMap
+  $.each(data, function(key, value){
+
+    if(value.name && value.color && value.mass && value.connections)
+      mindmap_data.push([value.name,value.color,value.mass,value.connections])
+  })
+
+  if(mindmap_data.length<=0)
+    $scope.isMindMap=false;
+
+  if($scope.isMindMap)
+    initMindMap(mindmap_data)
+
+  //isCanvas
+  $.each(data, function(key, value){
+    if(value.text && value.x && value.y)
+      canvas_data.push([value.text, value.x, value.y])
+  })
+
+  if(canvas_data.length<=0)
+    $scope.isCanvas=false;
+
+  if($scope.isCanvas)
+  {
+    var c = document.getElementById("canvas");
+    c.width = 1000
+    c.height = 500
+
+    var ctx = c.getContext("2d");
+    ctx.font = "30px Roboto";
+
+    $.each(canvas_data, function(i){
+      ctx.fillText(canvas_data[i][0],canvas_data[i][1],canvas_data[i][2]);
+    })
+  }
+
+});
+
+function initMap() {
+  var map = new google.maps.Map(document.getElementById('map'), {
+    zoom: 4,
+    center: {lat: 0, lng: 0}
+  });
+
+  $.each(data, function(i){
+    if(data[i].lat && data[i].lng)
+    {
+      var marker = new google.maps.Marker({
+        position: {lat: data[i].lat, lng: data[i].lng},
+        map: map,
+        title: 'Hello World!'
+      });
+    }
+  })
+
+}
+
+</script>
+
+<script>
+
+google.charts.load('current', {packages: ['corechart', 'bar']});
+google.charts.setOnLoadCallback(drawDualX);
+
+function drawDualX() {
+
+      var google_bar_data = google.visualization.arrayToDataTable(bar_data);
+
+      var options = {
+        chart: {
+          title: 'TODO3',
+          subtitle: 'TODO4'
+        },
+        hAxis: {
+          title: 'TODO5'
+        },
+        vAxis: {
+          title: 'TODO6'
+        },
+        bars: 'horizontal'
+      };
+      var material = new google.charts.Bar(document.getElementById('chart_div'));
+      material.draw(google_bar_data, options);
+    }
+</script>
+
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCjWh-Ry4NVRvyIHvgJiUTbHbfTPMkaKNs&callback=initMap"></script>
+
+</body>
+</html>
