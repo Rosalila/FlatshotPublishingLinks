@@ -67,7 +67,7 @@ var data = [
   name:"Free GameDev Planet",description:"TODO",link:"http://planet.freegamedev.net/"
 },
 {
-  name:"Open Game Art",description:"TODO",link:"http://opengameart.org/"
+  name:"Open Game Art",description:"TODO",link:"http://opengameart.org/content/flatshot-complete-pack"
 },
 {
   name:"Open Source Games Subreddit",description:"TODO",link:"https://www.reddit.com/r/opensourcegames"
