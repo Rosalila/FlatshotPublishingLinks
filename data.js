@@ -70,6 +70,9 @@ var data = [
   name:"Open Game Art",description:"TODO",link:"http://opengameart.org/content/flatshot-complete-pack"
 },
 {
+  name:"Open Game Art Forum",description:"TODO",link:"http://opengameart.org/forumtopic/flatshot-a-bullet-hell-with-minimal-aesthetics-now-on-greenlight"
+},
+{
   name:"Open Source Games Subreddit",description:"TODO",link:"https://www.reddit.com/r/opensourcegames"
 },
 
